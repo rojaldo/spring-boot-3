@@ -2,7 +2,7 @@ package com.example.demo.user;
 
 import io.micrometer.common.lang.NonNull;
 
-public class UserDto {
+public class UserDto implements IUserResponse {
 
     @NonNull
     private String name;

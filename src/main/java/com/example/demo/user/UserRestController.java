@@ -22,27 +22,30 @@ public class UserRestController {
     @Autowired UserService userService;
     
     @GetMapping("/users")
-    public ResponseEntity<Object> getUsers(){
-
+    public ResponseEntity<Iterable<UserDto>> getUsers(){
         Iterable<UserDto> users = this.userService.getUsers();
         return ResponseEntity.status(200).body(users);
     }
 
     @PostMapping("/users")
-    public ResponseEntity<Object> createUser(@RequestBody UserDto user){
+    public ResponseEntity<UserDto> createUser(@RequestBody UserDto user){
         UserDto result = this.userService.createUser(user);
         return ResponseEntity.status(201).body(result);
     }
 
     @PutMapping("/users/{id}")
-    public ResponseEntity<Object> updateUser(@RequestBody UserDto user, @PathVariable("id") Long id){
+    public ResponseEntity<UserDto> updateUser(@RequestBody UserDto user, @PathVariable("id") Long id){
         UserDto result = this.userService.updateUser(user, id);
         return ResponseEntity.status(202).body(result);
     }
 
     @DeleteMapping("/users")
-    public ResponseEntity<Object> deleteUser(@RequestParam(name = "id", required = true) Long id){
+    public ResponseEntity<IUserResponse> deleteUser(@RequestParam(name = "id", required = true) Long id){
         UserDto result = this.userService.deleteUser(id);
-        return ResponseEntity.status(200).body(result);
+        if (result != null) {
+            return ResponseEntity.status(200).body(result);
+        }
+        return ResponseEntity.status(400).body(new UserErrorResponse("User not found ("+ id + ")", 400));
+        
     }
 }

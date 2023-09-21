@@ -2,6 +2,7 @@ package com.example.demo.user;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class UserService {
     }
 
     public UserDto updateUser(UserDto user, Long id) {
-        log.info("ID: "+ id.toString());
+        log.info("ID: " + id.toString());
         UserEntity userEntity = this.userRepository.findById(id).get();
         userEntity.setName(user.getName());
         userEntity.setEmail(user.getEmail());
@@ -41,9 +42,13 @@ public class UserService {
     }
 
     public UserDto deleteUser(Long id) {
-        UserEntity userEntity = this.userRepository.findById(id).get();
-        this.userRepository.delete(userEntity);
-        return new UserDto(userEntity.getName(), userEntity.getEmail());
+        Optional<UserEntity> user = this.userRepository.findById(id);
+        if (user.isPresent()) {
+            this.userRepository.delete(user.get());
+            return new UserDto(user.get().getName(), user.get().getEmail());
+        }else {
+            return null;
+        }
     }
-    
+
 }
