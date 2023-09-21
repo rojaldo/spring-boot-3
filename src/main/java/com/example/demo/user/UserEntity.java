@@ -37,5 +37,13 @@ public class UserEntity {
     public String getEmail() {
         return this.email;
     }
+
+    public void setName(@NonNull String name) {
+        this.name = name;
+    }
+
+    public void setEmail(@NonNull String email) {
+        this.email = email;
+    }
     
 }
