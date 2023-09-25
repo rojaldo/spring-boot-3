@@ -1,29 +1,25 @@
 package com.example.demo.user;
 
-import io.micrometer.common.lang.NonNull;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+@EqualsAndHashCode
+@Builder
 public class UserDto implements IUserResponse {
 
-    @NonNull
+    @NotBlank
     private String name;
 
-    @NonNull
+    @NotBlank
     private String email;
 
-    public UserDto() {
-    }
-
-    public UserDto(@NonNull String name, @NonNull String email) {
-        this.name = name;
-        this.email = email;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getEmail() {
-        return this.email;
-    }
-    
 }
