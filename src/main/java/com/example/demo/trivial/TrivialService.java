@@ -2,6 +2,7 @@ package com.example.demo.trivial;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,29 @@ public class TrivialService {
                 trivialCardDto.getDifficulty(), trivialCardDto.getType());
         trivialRepository.save(trivialCardEntity);
         return trivialCardDto;
+    }
+
+    public TrivialCardDto updateTrivialCard(TrivialCardDto trivialCardDto, long id) throws NoSuchElementException {
+        // find the card in the database
+        TrivialCardEntity trivialCardEntity = null;
+        trivialCardEntity = trivialRepository.findById(id).get();
+        
+        // if it exists, update it
+        if (trivialCardEntity != null) {
+            trivialCardEntity.setCategory(trivialCardDto.getCategory());
+            trivialCardEntity.setDifficulty(trivialCardDto.getDifficulty());
+            trivialCardEntity.setQuestion(trivialCardDto.getQuestion());
+            trivialCardEntity.setRightAnswer(trivialCardDto.getRightAnswer());
+            trivialCardEntity.setType(trivialCardDto.getType());
+            trivialCardEntity.setWrongAnswers(trivialCardDto.getWrongAnswers());
+            trivialRepository.save(trivialCardEntity);
+            return trivialCardDto;
+        }
+        // if it doesn't exist, return null
+        else {
+            return null;
+        }
+
     }
 
     
