@@ -19,7 +19,8 @@ import jakarta.websocket.server.PathParam;
 @RequestMapping("/api/v1")
 public class UserRestController {
 
-    @Autowired UserService userService;
+    @Autowired 
+    UserService userService;
     
     @GetMapping("/users")
     public ResponseEntity<Iterable<UserDto>> getUsers(){

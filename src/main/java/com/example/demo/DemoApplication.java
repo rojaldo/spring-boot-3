@@ -6,6 +6,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 
+import com.example.demo.trivial.TrivialCardDto;
+import com.example.demo.trivial.TrivialService;
+
 
 @SpringBootApplication
 public class DemoApplication {
@@ -17,6 +20,14 @@ public class DemoApplication {
 	@Bean
 	public RestTemplate restTemplate() {
 		return new RestTemplate();
+	}
+
+	@Bean
+	public CommandLineRunner addBeers(TrivialService trivialService) {
+		return (args) -> {
+			trivialService.getCardsFromApi("https://opentdb.com/api.php?amount=20");
+			
+		};
 	}
 
 

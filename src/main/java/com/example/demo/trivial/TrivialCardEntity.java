@@ -5,8 +5,14 @@ import java.util.List;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class TrivialCardEntity {
 
     @Id
@@ -19,9 +25,6 @@ public class TrivialCardEntity {
     private List<String> wrongAnswers;
     private String difficulty;
     private String type;
-
-    public TrivialCardEntity() {
-    }
 
     public TrivialCardEntity(String question, String category, String rightAnswer, List<String> wrongAnswers,
             String difficulty, String type) {

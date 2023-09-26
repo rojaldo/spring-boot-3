@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -26,12 +27,14 @@ public class UserService {
         return userDtos;
     }
 
+    @Transactional
     public UserDto createUser(UserDto user) {
         UserEntity userEntity = new UserEntity(user.getName(), user.getEmail());
         this.userRepository.save(userEntity);
         return user;
     }
 
+    @Transactional
     public UserDto updateUser(UserDto user, Long id) {
         log.info("ID: " + id.toString());
         UserEntity userEntity = this.userRepository.findById(id).get();
@@ -41,6 +44,7 @@ public class UserService {
         return user;
     }
 
+    @Transactional
     public UserDto deleteUser(Long id) {
         Optional<UserEntity> user = this.userRepository.findById(id);
         if (user.isPresent()) {

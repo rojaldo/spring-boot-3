@@ -1,5 +1,6 @@
 package com.example.demo.user;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +20,7 @@ public class UserDto implements IUserResponse {
     @NotBlank
     private String name;
 
-    @NotBlank
+    @Email
     private String email;
 
 }
