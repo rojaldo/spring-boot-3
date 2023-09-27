@@ -2,14 +2,22 @@ package com.example.demo.trivial;
 
 import java.util.List;
 
+import org.hibernate.annotations.ManyToAny;
+
+import com.example.demo.user.UserEntity;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -25,6 +33,10 @@ public class TrivialCardEntity {
     private List<String> wrongAnswers;
     private String difficulty;
     private String type;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
 
     public TrivialCardEntity(String question, String category, String rightAnswer, List<String> wrongAnswers,
             String difficulty, String type) {

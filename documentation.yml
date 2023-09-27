@@ -1,0 +1,166 @@
+openapi: '3.0.2'
+info:
+  title: API for Spring Boot Sample Application
+  description: This is a sample server for a spring-boot application.
+  version: '1.0'
+servers:
+  - url: http://localhost:8080
+    description: Test Server
+  - url: https://api.server.prod/v1
+    description: Production Server
+
+paths:
+  /api/v1/trivial/cards:
+    get:
+      summary: Get all cards
+      operationId: getAllCards
+      description: Get all cards from the database and return them as a list, there are 3 parameters that can be used to filter the results (category, type, difficulty)
+      tags:
+        - cards
+      parameters:
+        - name: category
+          in: query
+          description: Category of the card
+          required: false
+          schema:
+            type: integer
+            example: 9
+        - name: type
+          in: query
+          description: Type of the card
+          required: false
+          schema:
+            type: string
+            example: "multiple"
+        - name: difficulty
+          in: query
+          description: Difficulty of the card
+          required: false
+          schema:
+            type: string
+            example: "Easy"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorGetCards'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    post:
+      summary: Add a new card
+      operationId: addCard
+      description: Add a new card to the database
+      tags:
+        - cards
+      requestBody:
+        description: Card object that needs to be added to the database
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Card'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorAddCard'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+
+components:
+  schemas:
+    Card:
+      type: object
+      properties:
+        category:
+          type: string
+          example: "General Knowledge"
+        type:
+          type: string
+          example: "multiple"
+        difficulty:
+          type: string
+          example: "Easy"
+        question:
+          type: string
+          example: "What is the name of Poland in Polish?"
+        correctAnswer:
+          type: string
+          example: "Polska"
+        incorrectAnswers:
+          type: array
+          items:
+            type: string
+          example: ["Poland", "Pupcia", "Polszka"]
+    ErrorGetCards:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "wrong parameters"
+        difficulty:
+          type: string
+          example: "Easy"
+        type:
+          type: string
+          example: "multiple"
+        category:
+          type: integer
+          format: int32
+          example: 99
+    ErrorAddCard:
+      type: object
+      properties:
+        message: 
+          type: string
+          example: "Wrong format of the card"
+    Error404:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Not Found"
+    Error500:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Internal Server Error"

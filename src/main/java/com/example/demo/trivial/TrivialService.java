@@ -25,14 +25,26 @@ public class TrivialService {
     @Autowired
     private RestTemplate resTemplate;
 
-    public List<TrivialCardDto> getTrivialCards(String difficulty) {
+    public List<TrivialCardDto> getTrivialCards(String difficulty, String type, int category) {
 
         // get all cards from the database
-        List<TrivialCardEntity> trivialCardEntities;
-        if (difficulty.equals("any")) {
+        List<TrivialCardEntity> trivialCardEntities = new ArrayList<TrivialCardEntity>();
+        if (difficulty.equals("any") && type.equals("any") && category == -1) {
             trivialCardEntities = trivialRepository.findAll();
-        } else {
+        } else if (!difficulty.equals("any") && type.equals("any") && category == -1) {
             trivialCardEntities = trivialRepository.findByDifficulty(difficulty);
+        } else if (difficulty.equals("any") && !type.equals("any") && category == -1) {
+            trivialCardEntities = trivialRepository.findByType(type);
+        } else if (difficulty.equals("any") && type.equals("any") && category != -1) {
+            trivialCardEntities = trivialRepository.findByCategory(categories[category]);
+        }else if (!difficulty.equals("any") && !type.equals("any") && category == -1) {
+            trivialCardEntities = trivialRepository.findByDifficultyAndType(difficulty, type);
+        }else if (!difficulty.equals("any") && type.equals("any") && category != -1) {
+            trivialCardEntities = trivialRepository.findByCategoryAndDifficulty(categories[category], difficulty);
+        }else if (difficulty.equals("any") && !type.equals("any") && category != -1) {
+            trivialCardEntities = trivialRepository.findByCategoryAndType(categories[category], type);
+        }else if (!difficulty.equals("any") && !type.equals("any") && category != -1) {
+            trivialCardEntities = trivialRepository.findByCategoryAndDifficultyAndType(categories[category], difficulty, type);
         }
         // convert them to DTOs
         List<TrivialCardDto> trivialCardDtos = new ArrayList<>();
@@ -148,6 +160,14 @@ public class TrivialService {
     boolean difficultyIsValid(String difficulty) {
         return difficulty.equals("easy") || difficulty.equals("medium") || difficulty.equals("hard")
                 || difficulty.equals("any");
+    }
+
+    boolean typeIsValid(String type) {
+        return type.equals("multiple") || type.equals("boolean") || type.equals("any");
+    }
+
+    boolean categoryIsValid(int category) {
+        return category >= -1 && category <= this.categories.length - 1;
     }
 
 }

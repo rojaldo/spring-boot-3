@@ -11,6 +11,7 @@ public interface TrivialRepository extends JpaRepository<TrivialCardEntity, Long
     List<TrivialCardEntity> findByType(String type);
     List<TrivialCardEntity> findByCategoryAndDifficulty(String category, String difficulty);
     List<TrivialCardEntity> findByCategoryAndType(String category, String type);
-
+    List<TrivialCardEntity> findByDifficultyAndType(String difficulty, String type);
+    List<TrivialCardEntity> findByCategoryAndDifficultyAndType(String category, String difficulty, String type);
     
 }

@@ -1,5 +1,7 @@
 package com.example.demo.user;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -22,5 +24,8 @@ public class UserDto implements IUserResponse {
 
     @Email
     private String email;
+
+    @JsonProperty("cards_id")
+    private Long[] cardsId;
 
 }

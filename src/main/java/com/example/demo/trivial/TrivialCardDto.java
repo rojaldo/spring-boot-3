@@ -41,4 +41,9 @@ public class TrivialCardDto {
     @NotBlank
     private String type;
 
+    @JsonProperty("user_id")
+    private long userId;
+
+    
+
 }

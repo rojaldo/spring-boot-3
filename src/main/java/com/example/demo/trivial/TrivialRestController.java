@@ -19,23 +19,28 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/trivial")
-public class TrivialController {
+public class TrivialRestController {
 
     @Autowired
     TrivialService trivialService;
 
     @GetMapping("/cards")
     public ResponseEntity<?> trivial(
-            @RequestParam(name = "difficulty", required = false, defaultValue = "any") String difficulty) {
+            @RequestParam(name = "difficulty", required = false, defaultValue = "any") String difficulty,
+            @RequestParam(name = "type", required = false, defaultValue = "any") String type,
+            @RequestParam(name = "category", required = false, defaultValue = "-1") int category
+            ) {
         // get all cards from the database
-        if(this.trivialService.difficultyIsValid(difficulty)){
-            Iterable<TrivialCardDto> trivialCardDtos = trivialService.getTrivialCards(difficulty);
+        if(this.trivialService.difficultyIsValid(difficulty) && this.trivialService.typeIsValid(type) && this.trivialService.categoryIsValid(category)){
+            Iterable<TrivialCardDto> trivialCardDtos = trivialService.getTrivialCards(difficulty, type, category);
             return ResponseEntity.status(200).body(trivialCardDtos);
         }else{
             return ResponseEntity.status(400).body(new HashMap<String, String>() {
                 {
-                    put("message", "wrong difficulty; it must be one of: easy, medium, hard");
+                    put("message", "wrong parameters");
                     put("difficulty", difficulty);
+                    put("type", type);
+                    put("category", Integer.toString(category));
                 }
             });
         }
