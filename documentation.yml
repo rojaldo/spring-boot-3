@@ -104,7 +104,90 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error500'
-
+  /api/v1/trivial/cards/{id}:
+    put: 
+      summary: Update a card
+      operationId: updateCard
+      description: Update a card in the database
+      tags:
+        - cards
+      parameters:
+        - name: id
+          in: path
+          description: ID of the card that needs to be updated
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      requestBody:
+        description: Card object that needs to be updated in the database
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Card'
+      responses:
+        '202':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorAddCard'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
+    delete: 
+      summary: Delete a card
+      operationId: deleteCard
+      description: Delete a card from the database
+      security:
+        - bearerAuth: []
+      tags:
+        - cards
+      parameters:
+        - name: id
+          in: path
+          description: ID of the card that needs to be deleted
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error404'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error500'
 components:
   schemas:
     Card:
@@ -164,3 +247,14 @@ components:
         message:
           type: string
           example: "Internal Server Error"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer      
+      bearerFormat: JWT
+    basicAuth:
+      type: http
+      scheme: basic
+security:
+  - bearerAuth: []
+  - basicAuth: []

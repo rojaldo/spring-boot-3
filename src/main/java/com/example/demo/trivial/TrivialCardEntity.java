@@ -2,8 +2,6 @@ package com.example.demo.trivial;
 
 import java.util.List;
 
-import org.hibernate.annotations.ManyToAny;
-
 import com.example.demo.user.UserEntity;
 
 import jakarta.persistence.Entity;

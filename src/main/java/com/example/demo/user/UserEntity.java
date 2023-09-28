@@ -1,5 +1,6 @@
 package com.example.demo.user;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.example.demo.trivial.TrivialCardEntity;
@@ -15,6 +16,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.CascadeType;
 
 @Entity
 @Table(name = "users")
