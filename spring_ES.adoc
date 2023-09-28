@@ -95,6 +95,7 @@ Para gestionar las tareas de compilación, ejecución, limpieza y testing en Spr
 - Para ejecutar tu aplicación, usa el comando `mvn spring-boot:run`. Asegúrate de estar en la carpeta del archivo JAR que se encuentra en la carpeta "target".
 - Para limpiar tu proyecto, usa el comando `mvn clean`. Esto eliminará los archivos generados por la compilación.
 - Para realizar los tests de tu aplicación, usa el comando `mvn test`. Puedes usar las anotaciones y funcionalidades que te proporciona Spring Boot para crear tests unitarios e integrados.
+- mvn package: crea un archivo JAR con las clases compiladas y las dependencias.
 
 .-El archivo POM de tu proyecto debe tener las siguientes dependencias:
 [source,xml]
