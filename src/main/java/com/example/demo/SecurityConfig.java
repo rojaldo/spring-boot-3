@@ -2,9 +2,13 @@ package com.example.demo;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -12,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
@@ -40,16 +45,20 @@ public class SecurityConfig {
 	// Configuring HttpSecurity
 	@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.
-                authorizeHttpRequests(requests -> {
-                        requests.requestMatchers(new AntPathRequestMatcher("/secure/**")).hasAuthority("MyAuthority");
-                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/users")).authenticated();
-                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/trivial/cards")).authenticated();
-                        // allow all other requests
-                        requests.anyRequest().anonymous();
-                })
-                
-                .build();
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> {
+                            authorize
+                                    .requestMatchers( "/api/v1/users").hasRole("ADMIN")
+                                    .requestMatchers("/me").authenticated()
+                                    .anyRequest().permitAll();
+                        }
+                )
+                .httpBasic(Customizer.withDefaults())
+                .sessionManagement(sessionManagement ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        return http.build();
     }
 
 	// Password Encoding
