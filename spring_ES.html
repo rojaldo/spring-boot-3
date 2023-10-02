@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.18">
+<meta name="generator" content="Asciidoctor 2.0.20">
 <title>Spring Framework</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
@@ -208,13 +208,10 @@ table.tableblock.fit-content>caption.title{white-space:nowrap;width:0}
 .admonitionblock>table td.content{padding-left:1.125em;padding-right:1.25em;border-left:1px solid #dddddf;color:rgba(0,0,0,.6);word-wrap:anywhere}
 .admonitionblock>table td.content>:last-child>:last-child{margin-bottom:0}
 .exampleblock>.content{border:1px solid #e6e6e6;margin-bottom:1.25em;padding:1.25em;background:#fff;border-radius:4px}
-.exampleblock>.content>:first-child{margin-top:0}
-.exampleblock>.content>:last-child{margin-bottom:0}
 .sidebarblock{border:1px solid #dbdbd6;margin-bottom:1.25em;padding:1.25em;background:#f3f3f2;border-radius:4px}
-.sidebarblock>:first-child{margin-top:0}
-.sidebarblock>:last-child{margin-bottom:0}
 .sidebarblock>.content>.title{color:#7a2518;margin-top:0;text-align:center}
-.exampleblock>.content>:last-child>:last-child,.exampleblock>.content .olist>ol>li:last-child>:last-child,.exampleblock>.content .ulist>ul>li:last-child>:last-child,.exampleblock>.content .qlist>ol>li:last-child>:last-child,.sidebarblock>.content>:last-child>:last-child,.sidebarblock>.content .olist>ol>li:last-child>:last-child,.sidebarblock>.content .ulist>ul>li:last-child>:last-child,.sidebarblock>.content .qlist>ol>li:last-child>:last-child{margin-bottom:0}
+.exampleblock>.content>:first-child,.sidebarblock>.content>:first-child{margin-top:0}
+.exampleblock>.content>:last-child,.exampleblock>.content>:last-child>:last-child,.exampleblock>.content .olist>ol>li:last-child>:last-child,.exampleblock>.content .ulist>ul>li:last-child>:last-child,.exampleblock>.content .qlist>ol>li:last-child>:last-child,.sidebarblock>.content>:last-child,.sidebarblock>.content>:last-child>:last-child,.sidebarblock>.content .olist>ol>li:last-child>:last-child,.sidebarblock>.content .ulist>ul>li:last-child>:last-child,.sidebarblock>.content .qlist>ol>li:last-child>:last-child{margin-bottom:0}
 .literalblock pre,.listingblock>.content>pre{border-radius:4px;overflow-x:auto;padding:1em;font-size:.8125em}
 @media screen and (min-width:768px){.literalblock pre,.listingblock>.content>pre{font-size:.90625em}}
 @media screen and (min-width:1280px){.literalblock pre,.listingblock>.content>pre{font-size:1em}}
@@ -393,7 +390,7 @@ b.conum *{color:inherit!important}
 dt,th.tableblock,td.content,div.footnote{text-rendering:optimizeLegibility}
 h1,h2,p,td.content,span.alt,summary{letter-spacing:-.01em}
 p strong,td.content strong,div.footnote strong{letter-spacing:-.005em}
-p,blockquote,dt,td.content,span.alt,summary{font-size:1.0625rem}
+p,blockquote,dt,td.content,td.hdlist1,span.alt,summary{font-size:1.0625rem}
 p{margin-bottom:1.25rem}
 .sidebarblock p,.sidebarblock dt,.sidebarblock td.content,p.tableblock{font-size:1em}
 .exampleblock>.content{background:#fffef7;border-color:#e0e0dc;box-shadow:0 1px 4px #e0e0dc}
@@ -636,6 +633,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li>
 <p>Para realizar los tests de tu aplicación, usa el comando <code>mvn test</code>. Puedes usar las anotaciones y funcionalidades que te proporciona Spring Boot para crear tests unitarios e integrados.</p>
+</li>
+<li>
+<p>mvn package: crea un archivo JAR con las clases compiladas y las dependencias.</p>
 </li>
 </ul>
 </div>
@@ -2934,50 +2934,64 @@ public void saveUser(User user) {
 <div class="listingblock">
 <div class="title">Aquí hay un ejemplo básico de cómo implementar un UserDetailsService en Spring Security:</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Service
-public class CustomUserDetailsService implements UserDetailsService {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-    @Autowired
-    private UserRepository userRepository;
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-        return new CustomUserDetails(user);
+	// User Creation
+	@Bean
+	public UserDetailsService userDetailsService(PasswordEncoder encoder) {
+
+		// InMemoryUserDetailsManager
+		UserDetails admin = User.withUsername("some_admin")
+				.password(encoder.encode("1234"))
+				.roles("ADMIN", "USER")
+				.build();
+
+		UserDetails user = User.withUsername("some_user")
+				.password(encoder.encode("1234"))
+				.roles("USER")
+				.build();
+
+		return new InMemoryUserDetailsManager(admin, user);
+	}
+
+	// Configuring HttpSecurity
+	@Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http.
+                authorizeHttpRequests(requests -&gt; {
+                        requests.requestMatchers(new AntPathRequestMatcher("/secure/**")).hasAuthority("MyAuthority");
+                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/users")).authenticated();
+                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/trivial/cards")).authenticated();
+                        // allow all other requests
+                        requests.anyRequest().anonymous();
+                })
+
+                .build();
     }
-}</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>En este ejemplo, estamos cargando la información del usuario a partir de una base de datos utilizando el UserRepository, que es una interfaz que se encarga de las operaciones de CRUD en la tabla de usuarios. Después de cargar la información del usuario, estamos devolviendo un objeto CustomUserDetails, que es una clase que implementa la interfaz UserDetails y contiene la información del usuario y sus roles.</p>
-</div>
-<div class="listingblock">
-<div class="title">Aquí hay un ejemplo de cómo implementar un UserDetailsService en Spring Security que utiliza una base de datos para obtener la información del usuario:</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Service
-public class CustomUserDetailsService implements UserDetailsService {
 
-    @Autowired
-    private UserRepository userRepository;
+	// Password Encoding
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(), user.getPassword(), getAuthorities(user));
-    }
-
-    private Collection&lt;? extends GrantedAuthority&gt; getAuthorities(User user) {
-        String[] userRoles = user.getRoles().stream().map((role) -&gt; role.getName()).toArray(String[]::new);
-        Collection&lt;GrantedAuthority&gt; authorities = AuthorityUtils.createAuthorityList(userRoles);
-        return authorities;
-    }
 }</code></pre>
 </div>
 </div>
@@ -2994,75 +3008,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 <p>El usuario proporciona sus credenciales, como un nombre de usuario y una contraseña.
 El sistema valida las credenciales, generalmente mediante una comparación con información almacenada en una base de datos.
 Si las credenciales son válidas, se crea un objeto de autenticación para el usuario, que contiene detalles como el nombre de usuario, los roles y cualquier otra información relevante.
-El objeto de autenticación se almacena en el contexto de seguridad de la aplicación para que se pueda acceder posteriormente.
-Aquí hay un ejemplo de cómo se puede usar AuthenticationManager en una aplicación Spring Boot:</p>
-</div>
-<div class="paragraph">
-<p>Supongamos que tenemos una entidad "Usuario" en nuestra aplicación, que tiene propiedades como "nombre de usuario" y "contraseña". Además, tenemos una clase "UserService" que se encarga de interactuar con la base de datos y realizar la validación de credenciales.</p>
-</div>
-<div class="listingblock">
-<div class="title">Primero, definimos una configuración de seguridad básica en nuestra clase principal:</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
-@EnableWebSecurity
-public class WebSecurityConfig {
-
-    @Autowired
-    private UserService userService;
-
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userService);
-    }
-
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests()
-            .antMatchers("/admin/**").hasRole("ADMIN")
-            .antMatchers("/user/**").hasRole("USER")
-            .and().formLogin()
-            .and().logout()
-            .logoutSuccessUrl("/login?logout=true")
-            .invalidateHttpSession(true)
-            .clearAuthentication(true)
-            .deleteCookies("JSESSIONID");
-    }
-}</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="title">Luego, en nuestra clase <strong>UserService</strong>, definimos el método <strong>loadUserByUsername</strong> para buscar al usuario en la base de datos y validar sus credenciales:</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Service
-public class UserService implements UserDetailsService {
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("Usuario no encontrado");
-        }
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                user.isEnabled(),
-                true,
-                true,
-                true,
-                getAuthorities(user.getRoles()));
-    }
-
-    private Collection&lt;? extends GrantedAuthority&gt; getAuthorities(
-            Collection&lt;Role&gt; roles) {
-        return roles.stream()
-                .map(role -&gt; new SimpleGrantedAuthority("ROLE_" + role.getName()))
-                .collect(Collectors.toList());
-    }
-}</code></pre>
-</div>
+El objeto de autenticación se almacena en el contexto de seguridad de la aplicación para que se pueda acceder posteriormente.</p>
 </div>
 </div>
 <div class="sect2">
@@ -3079,36 +3025,34 @@ public class UserService implements UserDetailsService {
 <div class="listingblock">
 <div class="title">Un ejemplo de implementación de un AuthenticationProvider en Spring Security sería el siguiente:</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class MyAuthenticationProvider implements AuthenticationProvider {
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import java.io.IOException;
+import java.io.PrintWriter;
 
-  @Autowired
-  private UserService userService;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
+import org.springframework.stereotype.Component;
 
-  @Override
-  public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-    String username = authentication.getName();
-    String password = authentication.getCredentials().toString();
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-    User user = userService.findByUsername(username);
+@Component
+public class MyBasicAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
 
-    if (user == null) {
-      throw new BadCredentialsException("Usuario no encontrado");
+    @Override
+    public void commence(
+      HttpServletRequest request, HttpServletResponse response, AuthenticationException authEx)
+      throws IOException {
+        response.addHeader("WWW-Authenticate", "Basic realm=" + getRealmName());
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        PrintWriter writer = response.getWriter();
+        writer.println("HTTP Status 401 - " + authEx.getMessage());
     }
 
-    if (!passwordEncoder.matches(password, user.getPassword())) {
-      throw new BadCredentialsException("Contraseña incorrecta");
+    @Override
+    public void afterPropertiesSet() {
+        setRealmName("SpringBoot");
+        super.afterPropertiesSet();
     }
-
-    List&lt;GrantedAuthority&gt; roles = new ArrayList&lt;&gt;();
-    roles.add(new SimpleGrantedAuthority(user.getRole().getName()));
-
-    return new UsernamePasswordAuthenticationToken(username, password, roles);
-  }
-
-  @Override
-  public boolean supports(Class&lt;?&gt; authentication) {
-    return authentication.equals(UsernamePasswordAuthenticationToken.class);
-  }
 }</code></pre>
 </div>
 </div>
@@ -3148,31 +3092,6 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-}</code></pre>
-</div>
-</div>
-<div class="listingblock">
-<div class="title">Ahora, puedes utilizar la instancia de PasswordEncoder en tus servicios de usuario (por ejemplo, UserService). En el siguiente ejemplo, utilizamos PasswordEncoder para cifrar la contraseña antes de almacenarla en la base de datos:</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-@Service
-public class UserService {
-
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    public void saveUser(User user) {
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(encodedPassword);
-        userRepository.save(user);
     }
 }</code></pre>
 </div>
@@ -3342,44 +3261,55 @@ public class WebSecurityConfig {
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Configuration
 @EnableWebSecurity
-public class WebSecurityConfig {
+@EnableMethodSecurity
+public class SecurityConfig {
 
-    @Autowired private MyBasicAuthenticationEntryPoint authenticationEntryPoint;
+	// User Creation
+	@Bean
+	public UserDetailsService userDetailsService(PasswordEncoder encoder) {
 
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth
-          .inMemoryAuthentication()
-          .withUser("user1")
-          .password(passwordEncoder().encode("user1Pass"))
-          .authorities("ROLE_USER");
+		// InMemoryUserDetailsManager
+		UserDetails admin = User.withUsername("some_admin")
+				.password(encoder.encode("1234"))
+				.roles("ADMIN", "USER")
+				.build();
+
+		UserDetails user = User.withUsername("some_user")
+				.password(encoder.encode("1234"))
+				.roles("USER")
+				.build();
+
+		return new InMemoryUserDetailsManager(admin, user);
+	}
+
+	// Configuring HttpSecurity
+	@Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http.
+                authorizeHttpRequests(requests -&gt; {
+                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("/style.css")).permitAll();
+                        requests.requestMatchers(new AntPathRequestMatcher("/secure/**")).hasAuthority("MyAuthority");
+                        requests.requestMatchers(new AntPathRequestMatcher("/api/v1/users/**")).hasRole("ADMIN");
+                        // allow all other requests
+                        requests.anyRequest().anonymous();
+                })
+
+                .build();
     }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeRequests()
-            .antMatchers("/securityNone")
-            .permitAll()
-            .anyRequest()
-            .authenticated()
-            .and()
-            .httpBasic()
-            .authenticationEntryPoint(authenticationEntryPoint);
-        http.addFilterAfter(new CustomFilter(), BasicAuthenticationFilter.class);
-        return http.build();
-    }
+	// Password Encoding
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 }</code></pre>
 </div>
 </div>
 <div class="listingblock">
 <div class="title">Para probarlo, podemos usar curl:</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">curl -i --user user1:user1Pass http://localhost:8080/spring-security-rest-basic-auth/api/foos/1</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">curl -i --user some_admin:1234 http://localhost:8080/api/v1/trivial/cards</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -6427,7 +6357,7 @@ integration_tests_schedule:
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-05-16 07:51:13 UTC
+Last updated 2023-10-02 15:54:34 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>

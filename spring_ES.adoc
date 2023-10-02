@@ -1647,51 +1647,67 @@ En este método, podemos realizar consultas a la base de datos o a cualquier otr
 .Aquí hay un ejemplo básico de cómo implementar un UserDetailsService en Spring Security:
 [source,java]
 ----
-@Service
-public class CustomUserDetailsService implements UserDetailsService {
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-    @Autowired
-    private UserRepository userRepository;
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-        return new CustomUserDetails(user);
+	// User Creation
+	@Bean
+	public UserDetailsService userDetailsService(PasswordEncoder encoder) {
+
+		// InMemoryUserDetailsManager
+		UserDetails admin = User.withUsername("some_admin")
+				.password(encoder.encode("1234"))
+				.roles("ADMIN", "USER")
+				.build();
+
+		UserDetails user = User.withUsername("some_user")
+				.password(encoder.encode("1234"))
+				.roles("USER")
+				.build();
+
+		return new InMemoryUserDetailsManager(admin, user);
+	}
+
+	// Configuring HttpSecurity
+	@Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http.
+                authorizeHttpRequests(requests -> {
+                        requests.requestMatchers(new AntPathRequestMatcher("/secure/**")).hasAuthority("MyAuthority");
+                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/users")).authenticated();
+                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/trivial/cards")).authenticated();
+                        // allow all other requests
+                        requests.anyRequest().anonymous();
+                })
+                
+                .build();
     }
+
+	// Password Encoding
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+
 }
 ----
 
-En este ejemplo, estamos cargando la información del usuario a partir de una base de datos utilizando el UserRepository, que es una interfaz que se encarga de las operaciones de CRUD en la tabla de usuarios. Después de cargar la información del usuario, estamos devolviendo un objeto CustomUserDetails, que es una clase que implementa la interfaz UserDetails y contiene la información del usuario y sus roles.
-
-.Aquí hay un ejemplo de cómo implementar un UserDetailsService en Spring Security que utiliza una base de datos para obtener la información del usuario:
-[source,java]
-----
-@Service
-public class CustomUserDetailsService implements UserDetailsService {
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found");
-        }
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(), user.getPassword(), getAuthorities(user));
-    }
-
-    private Collection<? extends GrantedAuthority> getAuthorities(User user) {
-        String[] userRoles = user.getRoles().stream().map((role) -> role.getName()).toArray(String[]::new);
-        Collection<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(userRoles);
-        return authorities;
-    }
-}
-----
 
 === AuthenticationManager
 
@@ -1703,73 +1719,6 @@ El usuario proporciona sus credenciales, como un nombre de usuario y una contras
 El sistema valida las credenciales, generalmente mediante una comparación con información almacenada en una base de datos.
 Si las credenciales son válidas, se crea un objeto de autenticación para el usuario, que contiene detalles como el nombre de usuario, los roles y cualquier otra información relevante.
 El objeto de autenticación se almacena en el contexto de seguridad de la aplicación para que se pueda acceder posteriormente.
-Aquí hay un ejemplo de cómo se puede usar AuthenticationManager en una aplicación Spring Boot:
-
-Supongamos que tenemos una entidad "Usuario" en nuestra aplicación, que tiene propiedades como "nombre de usuario" y "contraseña". Además, tenemos una clase "UserService" que se encarga de interactuar con la base de datos y realizar la validación de credenciales.
-
-.Primero, definimos una configuración de seguridad básica en nuestra clase principal:
-[source,java]
-----
-@Configuration
-@EnableWebSecurity
-public class WebSecurityConfig {
- 
-    @Autowired
-    private UserService userService;
- 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userService);
-    }
- 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests()
-            .antMatchers("/admin/**").hasRole("ADMIN")
-            .antMatchers("/user/**").hasRole("USER")
-            .and().formLogin()
-            .and().logout()
-            .logoutSuccessUrl("/login?logout=true")
-            .invalidateHttpSession(true)
-            .clearAuthentication(true)
-            .deleteCookies("JSESSIONID");
-    }
-}
-----
-
-.Luego, en nuestra clase **UserService**, definimos el método *loadUserByUsername* para buscar al usuario en la base de datos y validar sus credenciales:
-[source,java]
-----
-@Service
-public class UserService implements UserDetailsService {
- 
-    @Autowired
-    private UserRepository userRepository;
- 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("Usuario no encontrado");
-        }
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                user.isEnabled(),
-                true,
-                true,
-                true,
-                getAuthorities(user.getRoles()));
-    }
- 
-    private Collection<? extends GrantedAuthority> getAuthorities(
-            Collection<Role> roles) {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
-                .collect(Collectors.toList());
-    }
-}
-----
 
 === AuthenticationProvider
 AuthenticationProvider es una interfaz en Spring Security que se utiliza para autenticar solicitudes de seguridad en una aplicación web. Esta interfaz se encarga de validar las credenciales de un usuario y autenticarlo en la aplicación.
@@ -1781,36 +1730,34 @@ La interfaz AuthenticationProvider tiene un único método llamado "authenticate
 .Un ejemplo de implementación de un AuthenticationProvider en Spring Security sería el siguiente:
 [source,java]
 ----
-public class MyAuthenticationProvider implements AuthenticationProvider {
+import java.io.IOException;
+import java.io.PrintWriter;
 
-  @Autowired
-  private UserService userService;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
+import org.springframework.stereotype.Component;
 
-  @Override
-  public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-    String username = authentication.getName();
-    String password = authentication.getCredentials().toString();
-    
-    User user = userService.findByUsername(username);
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-    if (user == null) {
-      throw new BadCredentialsException("Usuario no encontrado");
+@Component
+public class MyBasicAuthenticationEntryPoint extends BasicAuthenticationEntryPoint {
+
+    @Override
+    public void commence(
+      HttpServletRequest request, HttpServletResponse response, AuthenticationException authEx) 
+      throws IOException {
+        response.addHeader("WWW-Authenticate", "Basic realm=" + getRealmName());
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        PrintWriter writer = response.getWriter();
+        writer.println("HTTP Status 401 - " + authEx.getMessage());
     }
 
-    if (!passwordEncoder.matches(password, user.getPassword())) {
-      throw new BadCredentialsException("Contraseña incorrecta");
+    @Override
+    public void afterPropertiesSet() {
+        setRealmName("SpringBoot");
+        super.afterPropertiesSet();
     }
-
-    List<GrantedAuthority> roles = new ArrayList<>();
-    roles.add(new SimpleGrantedAuthority(user.getRole().getName()));
-
-    return new UsernamePasswordAuthenticationToken(username, password, roles);
-  }
-
-  @Override
-  public boolean supports(Class<?> authentication) {
-    return authentication.equals(UsernamePasswordAuthenticationToken.class);
-  }
 }
 ----
 
@@ -1850,30 +1797,6 @@ public class SecurityConfig {
 }
 ----
 
-.Ahora, puedes utilizar la instancia de PasswordEncoder en tus servicios de usuario (por ejemplo, UserService). En el siguiente ejemplo, utilizamos PasswordEncoder para cifrar la contraseña antes de almacenarla en la base de datos:
-[source,java]
-----
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-
-@Service
-public class UserService {
-
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    public void saveUser(User user) {
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(encodedPassword);
-        userRepository.save(user);
-    }
-}
-----
 
 .Por último, puedes utilizar PasswordEncoder en tus controladores de Spring. En el siguiente ejemplo, utilizamos PasswordEncoder para verificar que la contraseña proporcionada por el usuario coincide con la contraseña almacenada en la base de datos:
 [source,java]
@@ -2004,44 +1927,55 @@ La autenticación básica es un método de autenticación simple que se utiliza 
 ----
 @Configuration
 @EnableWebSecurity
-public class WebSecurityConfig {
+@EnableMethodSecurity
+public class SecurityConfig {
 
-    @Autowired private MyBasicAuthenticationEntryPoint authenticationEntryPoint;
+	// User Creation
+	@Bean
+	public UserDetailsService userDetailsService(PasswordEncoder encoder) {
 
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth
-          .inMemoryAuthentication()
-          .withUser("user1")
-          .password(passwordEncoder().encode("user1Pass"))
-          .authorities("ROLE_USER");
+		// InMemoryUserDetailsManager
+		UserDetails admin = User.withUsername("some_admin")
+				.password(encoder.encode("1234"))
+				.roles("ADMIN", "USER")
+				.build();
+
+		UserDetails user = User.withUsername("some_user")
+				.password(encoder.encode("1234"))
+				.roles("USER")
+				.build();
+
+		return new InMemoryUserDetailsManager(admin, user);
+	}
+
+	// Configuring HttpSecurity
+	@Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http.
+                authorizeHttpRequests(requests -> {
+                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("/style.css")).permitAll();
+                        requests.requestMatchers(new AntPathRequestMatcher("/secure/**")).hasAuthority("MyAuthority");
+                        requests.requestMatchers(new AntPathRequestMatcher("/api/v1/users/**")).hasRole("ADMIN");
+                        // allow all other requests
+                        requests.anyRequest().anonymous();
+                })
+                
+                .build();
     }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.authorizeRequests()
-            .antMatchers("/securityNone")
-            .permitAll()
-            .anyRequest()
-            .authenticated()
-            .and()
-            .httpBasic()
-            .authenticationEntryPoint(authenticationEntryPoint);
-        http.addFilterAfter(new CustomFilter(), BasicAuthenticationFilter.class);
-        return http.build();
-    }
-    
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+	// Password Encoding
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
+
 }
 ----
 
 .Para probarlo, podemos usar curl:
 [source,shell]
 ----
-curl -i --user user1:user1Pass http://localhost:8080/spring-security-rest-basic-auth/api/foos/1
+curl -i --user some_admin:1234 http://localhost:8080/api/v1/trivial/cards
 ----
 
 Por defecto, el BasicAuthenticationEntryPoint proporcionado por Spring Security devuelve una página completa para una respuesta 401 Unauthorized de vuelta al cliente. Esta representación HTML del error se muestra bien en un navegador. Por el contrario, no está bien adaptado para otros escenarios, como una API REST donde se puede preferir una representación json.

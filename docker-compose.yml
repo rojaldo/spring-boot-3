@@ -1,27 +1,29 @@
-# docker-compose to setup a container that is built from the Dockerfile and a mysql container with these settings:
-# MYSQL_USER: root
-# MYSQL_ROOT_PASSWORD: my-secret-pw
-# MYSQL_DATABASE: test
-# MYSQL_PORT: 3308
+version: '3'
 
 services:
-  app:
-    build: .
-    ports:
-      - "8081:8080"
-    links:
-      - db
-    networks:
-      - mynet
-  db:
-    container_name: mysql
-    image: mysql:latest
+
+  myapp-mysql:
+    image: mysql:8.0
     environment:
-      MYSQL_USER: root
-      MYSQL_ROOT_PASSWORD: my-secret-pw
-      MYSQL_DATABASE: test
-    networks:
-      - mynet
-networks:
-  mynet:
-    driver: bridge
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=MyAppDb
+      - MYSQL_USER=myapp-user
+      - MYSQL_PASSWORD=password
+    ports:
+      - 3306:3306
+
+  myapp-main:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    depends_on:
+      - myapp-mysql
+    ports:
+      - 8080:8080
+    environment:
+      - DATABASE_HOST=myapp-mysql
+      - DATABASE_USER=myapp-user
+      - DATABASE_PASSWORD=password
+      - DATABASE_NAME=MyAppDb
+      - DATABASE_PORT=3306
