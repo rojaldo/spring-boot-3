@@ -22,6 +22,14 @@ docker run -p 3307:3306 -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql
 
 [https://spring.io/guides/topicals/spring-boot-docker/]
 
+## Resources for Spring Boot
+
+[https://www.baeldung.com/]
+[https://www.geeksforgeeks.org/]
+[https://spring.io/guides]
+[https://github.com/ThomasVitale/awesome-spring]
+[https://github.com/stunstunstun/awesome-spring-boot]
+
 
 
 
