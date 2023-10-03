@@ -37,6 +37,9 @@ public class CalculatorService {
 
     public String evaluate(String expression) {
         log.info("evaluate: {}", expression);
+        if (expression == null || expression.length() == 0) {
+            return " => ERROR";
+        }
         String resultString = "";
         for (int i = 0; i < expression.length(); i++) {
             char c = expression.charAt(i);

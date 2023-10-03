@@ -47,10 +47,57 @@ class DemoApplicationTests {
 	}
 
 	@Test
+	@DisplayName("Test BooksService calculate method")
 	public void whenNotUseMockAnnotation_thenCorrect() {
 		when(this.mockedService.calculate(1, 2, "+")).thenReturn(3f);
 		assertEquals(3f, this.mockedService.calculate(1, 2, "+"));
 	}
+
+	@Test
+	@DisplayName("Test ClaculatorService evaluate method with 1+2=")
+	public void testEvaluate1() {
+		assertEquals("1+2=3.0", this.calculatorService.evaluate("1+2="));
+		assertEquals("1-2=-1.0", this.calculatorService.evaluate("1-2="));
+		assertEquals("1*2=2.0", this.calculatorService.evaluate("1*2="));
+		assertEquals("1/2=0.5", this.calculatorService.evaluate("1/2="));
+	}
+
+	@Test
+	@DisplayName("Test ClaculatorService evaluate method with 1+2")
+	public void testEvaluate11() {
+		assertEquals("1+2 => ERROR", this.calculatorService.evaluate("1+2"));
+	}
+
+	@Test
+	@DisplayName("Test ClaculatorService evaluate method with 1/0=")
+	public void testEvaluate2() {
+		assertEquals("1/0=Infinity", this.calculatorService.evaluate("1/0="));
+	}
+
+	@Test
+	@DisplayName("Test ClaculatorService evaluate method with 1/+0=")
+	public void testEvaluate3() {
+		assertEquals("1/+0= => ERROR", this.calculatorService.evaluate("1/+0="));
+	}
+
+	@Test
+	@DisplayName("Test ClaculatorService evaluate method with 1+2+3=")
+	public void testEvaluate4() {
+		assertEquals("1+2+3= => ERROR", this.calculatorService.evaluate("1+2+3="));
+	}
+
+	@Test
+	@DisplayName("Test ClaculatorService evaluate method with ''")
+	public void testEvaluate5() {
+		assertEquals(" => ERROR", this.calculatorService.evaluate(""));
+	}
+
+	@Test
+	@DisplayName("Test ClaculatorService evaluate method with special characters")
+	public void testEvaluate6() {
+		assertEquals("@#$%^&*() => ERROR", this.calculatorService.evaluate("@#$%^&*()"));
+	}
+
 
 
 }
