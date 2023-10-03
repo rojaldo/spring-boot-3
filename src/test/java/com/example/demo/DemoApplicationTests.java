@@ -34,26 +34,23 @@ class DemoApplicationTests {
 
 	@BeforeEach
 	void setUp() throws Exception {
-		this.calculatorService = new CalculatorService();
-		// run private method clearCalculator
-		this.calculatorService.getClass().getDeclaredMethod("clearCalculator").setAccessible(true);
-		Object obj = this.calculatorService.getClass().getDeclaredConstructor().newInstance();
-		// this.calculatorService.getClass().getDeclaredMethod("clearCalculator").invoke(obj);
+		this.mockedService = Mockito.mock(CalculatorService.class);
 	}
 
 	@Test
-	@DisplayName("Test BooksService")
+	@DisplayName("Test BooksService calculate method")
 	void test() {
-		
-		assertEquals(1, 1);
-		
+		assertEquals( 3f, this.calculatorService.calculate(1, 2, "+"));
+		assertEquals( -1f, this.calculatorService.calculate(1, 2, "-"));
+		assertEquals( 2f, this.calculatorService.calculate(1, 2, "*"));
+		assertEquals( 0.5f, this.calculatorService.calculate(1, 2, "/"));
 	}
 
 	@Test
 	public void whenNotUseMockAnnotation_thenCorrect() {
-		this.mockedService = Mockito.mock(CalculatorService.class);
 		when(this.mockedService.calculate(1, 2, "+")).thenReturn(3f);
 		assertEquals(3f, this.mockedService.calculate(1, 2, "+"));
 	}
+
 
 }
