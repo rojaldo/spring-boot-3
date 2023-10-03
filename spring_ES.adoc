@@ -1649,9 +1649,13 @@ En este método, podemos realizar consultas a la base de datos o a cualquier otr
 ----
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -1659,6 +1663,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
@@ -1687,16 +1692,21 @@ public class SecurityConfig {
 	// Configuring HttpSecurity
 	@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.
-                authorizeHttpRequests(requests -> {
-                        requests.requestMatchers(new AntPathRequestMatcher("/secure/**")).hasAuthority("MyAuthority");
-                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/users")).authenticated();
-                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/trivial/cards")).authenticated();
-                        // allow all other requests
-                        requests.anyRequest().anonymous();
-                })
-                
-                .build();
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -> {
+                            authorize
+                                    .requestMatchers( "/api/v1/users").hasRole("ADMIN")
+                                    .requestMatchers( "/api/v1/trivial/cards").hasRole("USER")
+                                    .requestMatchers("/api/v1/books").authenticated()
+                                    .anyRequest().permitAll();
+                        }
+                )
+                .httpBasic(Customizer.withDefaults())
+                .sessionManagement(sessionManagement ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        return http.build();
     }
 
 	// Password Encoding
@@ -2966,7 +2976,7 @@ Para utilizar Mockito en una aplicación Spring Boot, es necesario añadir la si
 <dependency>
   <groupId>org.mockito</groupId>
   <artifactId>mockito-core</artifactId>
-  <version>2.23.4</version>
+  <version>5.5.0</version>
   <scope>test</scope>
 </dependency>
 ----
@@ -2977,18 +2987,131 @@ Para utilizar Mockito en una aplicación Spring Boot, es necesario añadir la si
 testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
 ----
 
+==== Cómo utilizar Mockito con Spring Boot 3
+
+Spring Boot 3 usa JUnit 5 como framework de pruebas por defecto. Para utilizar Mockito en una prueba unitaria, se pueden seguir los siguientes pasos:
+
+.Añadir el decorador en la clase para habilitar Mockito:
+[source,java]
+----
+@ExtendWith(MockitoExtension.class)
+public class MyServiceTest {
+   // ...
+}
+----
+
+.alternativamente, se puede utilizar el método openMocks en el método beforeEach:
+[source,java]
+----
+@BeforeEach
+public void setUp() {
+    MockitoAnnotations.openMocks(this);
+}
+----
+
+.Usar la anotation @Mock para crear un objeto simulado:
+[source,java]
+----
+@Mock
+private MyRepository myRepository;
+
+@Test
+public void testMyService() {
+    // Configurar comportamiento simulado del repositorio
+    when(myRepository.findByName("foo")).thenReturn(new MyEntity("foo", 123));
+    // Comprobar que se ha llamado al método
+    assertEquals(myRepository.findByName("foo").getName(), "foo");
+}
+----
+
+La anotación @Spy se utiliza para crear un spy de Mockito. Un spy de Mockito es un objeto simulado que se utiliza para realizar pruebas unitarias sobre un objeto real, por tanto, se puede usar para simular el objeto real y realizar pruebas unitarias sobre él.
+
+.La anotación @Spy se puede utilizar de dos maneras:
+* *Con un objeto real*: Se utiliza para crear un spy de un objeto real.
+* *Con un objeto simulado*: Se utiliza para crear un spy de un objeto simulado.
+
+.Crear un spy de un objeto real:
+[source,java]
+----
+@Spy
+private MyService myService;
+
+@Test
+public void testMyService() {
+    // Configurar comportamiento simulado del servicio
+    when(myService.findByName("foo")).thenReturn(new MyEntity("foo", 123));
+    // simulamos el método getName
+    Mockito.doReturn("foo").when(myService).getName();
+    // Comprobar que se ha llamado al método
+    assertEquals(myService.findByName("foo").getName(), "foo");
+}
+----
+
+La anotación @Captor se utiliza para capturar los argumentos de un método de un objeto simulado. Esto es útil cuando se quiere verificar que se ha llamado a un método con los argumentos correctos.
+
+.Crear un captor:
+[source,java]
+----
+@Mock
+private List mockedList;
+
+@Captor
+private ArgumentCaptor<String> captor;
+
+@Test
+public void testMyService() {
+    // Configurar comportamiento simulado del servicio
+    mockedList.add("foo");
+    // Comprobar que se ha llamado al método
+    verify(mockedList).add(captor.capture());
+    assertEquals(captor.getValue(), "foo");
+}
+----
+
+La anotación @InjectMocks se utiliza para inyectar los mocks y spies en la clase de prueba.
+
+.Inyectar mocks y spies:
+[source,java]
+----
+@ExtendWith(MockitoExtension.class)
+public class MyServiceTest {
+   @InjectMocks
+   private MyService myService;
+   
+   @Mock
+   private MyRepository myRepository;
+   
+   @Spy
+   private MyEntity myEntity;
+   
+   // ...
+}
+----
+
+.Un ejemplo de test de una función que suma 2 números hecho con mockito:
+[source,java]
+----
+public class CalculatorTest {
+
+    @Mock
+    private Calculator calculator;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void testSum() {
+        when(calculator.sum(1, 2)).thenReturn(3);
+        assertEquals(calculator.sum(1, 2), 3);
+    }
+}
+----
+
+
 .Para utilizar Mockito en una prueba unitaria, se pueden seguir los siguientes pasos:
 
-.Añadir dependencia: Para utilizar Mockito en una prueba unitaria, es necesario añadir la siguiente dependencia en el archivo pom.xml:
-[source,xml]
-----
-<dependency>
-  <groupId>org.mockito</groupId>
-  <artifactId>mockito-core</artifactId>
-  <version>2.23.4</version>
-  <scope>test</scope>
-</dependency>
-----
 
 .Crear un objeto simulado: Para crear un objeto simulado, se utiliza el método estático mock de la clase Mockito.
 [source,java]

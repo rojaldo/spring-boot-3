@@ -1,7 +1,43 @@
-server:
-  port : 8080
+# server:
+#   port : 8080
+
+# spring:
+#   profiles:
+#     active: "dev"
+#   datasource:
+#     url: jdbc:h2:mem:mydb
+#     username: sa
+#     password: password
+#     driverClassName: org.h2.Driver
+#   h2:
+#     console:
+#       enabled: false
+#       path: /h2-console
+#       settings:
+#         trace: false
+#         web-allow-others: false
+#   # datasource:
+#   #   url: jdbc:mysql://myapp-mysql:3306/MyAppDb?useSSL=false&allowPublicKeyRetrieval=true
+#   #   username: myapp-user
+#   #   password: password
+
+#     # initialization-mode: always
+#   jpa:
+#     # database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+#     hibernate.ddl-auto: update
+# springdoc:
+#   swagger-ui:
+#     path: /swagger-ui.html
+
+# ---
 
 spring:
+  profiles:
+    include:
+      - dev
+      - prod
+  active:
+    profiles: dev
   datasource:
     url: jdbc:h2:mem:mydb
     username: sa
@@ -14,15 +50,35 @@ spring:
       settings:
         trace: false
         web-allow-others: false
-  # datasource:
-  #   url: jdbc:mysql://myapp-mysql:3306/MyAppDb?useSSL=false&allowPublicKeyRetrieval=true
-  #   username: myapp-user
-  #   password: password
-
-    # initialization-mode: always
   jpa:
-    # database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate.ddl-auto: update
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
+
+---
+
+profiles: prod
+spring:
+  active:
+    profiles: prod
+  port : 8081
+  datasource:
+    url: jdbc:h2:mem:mydb
+    username: sa
+    password: password
+    driverClassName: org.h2.Driver
+  h2:
+    console:
+      enabled: false
+      path: /h2-console
+      settings:
+        trace: false
+        web-allow-others: false
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate.ddl-auto: update
+
+
+
+
+
+

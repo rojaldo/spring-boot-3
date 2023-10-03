@@ -2936,9 +2936,13 @@ public void saveUser(User user) {
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -2946,6 +2950,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
@@ -2974,16 +2979,21 @@ public class SecurityConfig {
 	// Configuring HttpSecurity
 	@Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.
-                authorizeHttpRequests(requests -&gt; {
-                        requests.requestMatchers(new AntPathRequestMatcher("/secure/**")).hasAuthority("MyAuthority");
-                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/users")).authenticated();
-                        requests.requestMatchers(new AntPathRequestMatcher("/"), new AntPathRequestMatcher("api/v1/trivial/cards")).authenticated();
-                        // allow all other requests
-                        requests.anyRequest().anonymous();
-                })
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(authorize -&gt; {
+                            authorize
+                                    .requestMatchers( "/api/v1/users").hasRole("ADMIN")
+                                    .requestMatchers( "/api/v1/trivial/cards").hasRole("USER")
+                                    .requestMatchers("/api/v1/books").authenticated()
+                                    .anyRequest().permitAll();
+                        }
+                )
+                .httpBasic(Customizer.withDefaults())
+                .sessionManagement(sessionManagement -&gt;
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-                .build();
+        return http.build();
     }
 
 	// Password Encoding
@@ -4467,7 +4477,7 @@ public class MyIntegrationTest {
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
   &lt;groupId&gt;org.mockito&lt;/groupId&gt;
   &lt;artifactId&gt;mockito-core&lt;/artifactId&gt;
-  &lt;version&gt;2.23.4&lt;/version&gt;
+  &lt;version&gt;5.5.0&lt;/version&gt;
   &lt;scope&gt;test&lt;/scope&gt;
 &lt;/dependency&gt;</code></pre>
 </div>
@@ -4478,15 +4488,137 @@ public class MyIntegrationTest {
 <pre class="highlightjs highlight"><code class="language-groovy hljs" data-lang="groovy">testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.4'</code></pre>
 </div>
 </div>
+<div class="sect3">
+<h4 id="_cómo_utilizar_mockito_con_spring_boot_3">Cómo utilizar Mockito con Spring Boot 3</h4>
+<div class="paragraph">
+<p>Spring Boot 3 usa JUnit 5 como framework de pruebas por defecto. Para utilizar Mockito en una prueba unitaria, se pueden seguir los siguientes pasos:</p>
+</div>
 <div class="listingblock">
-<div class="title">Añadir dependencia: Para utilizar Mockito en una prueba unitaria, es necesario añadir la siguiente dependencia en el archivo pom.xml:</div>
+<div class="title">Añadir el decorador en la clase para habilitar Mockito:</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
-  &lt;groupId&gt;org.mockito&lt;/groupId&gt;
-  &lt;artifactId&gt;mockito-core&lt;/artifactId&gt;
-  &lt;version&gt;2.23.4&lt;/version&gt;
-  &lt;scope&gt;test&lt;/scope&gt;
-&lt;/dependency&gt;</code></pre>
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@ExtendWith(MockitoExtension.class)
+public class MyServiceTest {
+   // ...
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">alternativamente, se puede utilizar el método openMocks en el método beforeEach:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@BeforeEach
+public void setUp() {
+    MockitoAnnotations.openMocks(this);
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Usar la anotation @Mock para crear un objeto simulado:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Mock
+private MyRepository myRepository;
+
+@Test
+public void testMyService() {
+    // Configurar comportamiento simulado del repositorio
+    when(myRepository.findByName("foo")).thenReturn(new MyEntity("foo", 123));
+    // Comprobar que se ha llamado al método
+    assertEquals(myRepository.findByName("foo").getName(), "foo");
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La anotación @Spy se utiliza para crear un spy de Mockito. Un spy de Mockito es un objeto simulado que se utiliza para realizar pruebas unitarias sobre un objeto real, por tanto, se puede usar para simular el objeto real y realizar pruebas unitarias sobre él.</p>
+</div>
+<div class="ulist">
+<div class="title">La anotación @Spy se puede utilizar de dos maneras:</div>
+<ul>
+<li>
+<p><strong>Con un objeto real</strong>: Se utiliza para crear un spy de un objeto real.</p>
+</li>
+<li>
+<p><strong>Con un objeto simulado</strong>: Se utiliza para crear un spy de un objeto simulado.</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="title">Crear un spy de un objeto real:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Spy
+private MyService myService;
+
+@Test
+public void testMyService() {
+    // Configurar comportamiento simulado del servicio
+    when(myService.findByName("foo")).thenReturn(new MyEntity("foo", 123));
+    // simulamos el método getName
+    Mockito.doReturn("foo").when(myService).getName();
+    // Comprobar que se ha llamado al método
+    assertEquals(myService.findByName("foo").getName(), "foo");
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La anotación @Captor se utiliza para capturar los argumentos de un método de un objeto simulado. Esto es útil cuando se quiere verificar que se ha llamado a un método con los argumentos correctos.</p>
+</div>
+<div class="listingblock">
+<div class="title">Crear un captor:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@Mock
+private List mockedList;
+
+@Captor
+private ArgumentCaptor&lt;String&gt; captor;
+
+@Test
+public void testMyService() {
+    // Configurar comportamiento simulado del servicio
+    mockedList.add("foo");
+    // Comprobar que se ha llamado al método
+    verify(mockedList).add(captor.capture());
+    assertEquals(captor.getValue(), "foo");
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>La anotación @InjectMocks se utiliza para inyectar los mocks y spies en la clase de prueba.</p>
+</div>
+<div class="listingblock">
+<div class="title">Inyectar mocks y spies:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">@ExtendWith(MockitoExtension.class)
+public class MyServiceTest {
+   @InjectMocks
+   private MyService myService;
+
+   @Mock
+   private MyRepository myRepository;
+
+   @Spy
+   private MyEntity myEntity;
+
+   // ...
+}</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Un ejemplo de test de una función que suma 2 números hecho con mockito:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">public class CalculatorTest {
+
+    @Mock
+    private Calculator calculator;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void testSum() {
+        when(calculator.sum(1, 2)).thenReturn(3);
+        assertEquals(calculator.sum(1, 2), 3);
+    }
+}</code></pre>
 </div>
 </div>
 <div class="listingblock">
@@ -4505,6 +4637,7 @@ public class MyIntegrationTest {
 <div class="title">Verificar llamadas: Para verificar que se ha llamado a un método de un objeto simulado, se utiliza el método verify de la clase Mockito.</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">verify(myService).findByName("foo");</code></pre>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -6357,7 +6490,7 @@ integration_tests_schedule:
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-10-02 15:54:34 +0200
+Last updated 2023-10-03 16:45:27 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
